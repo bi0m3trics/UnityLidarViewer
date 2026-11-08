@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 216" width="960" height="216" role="img" aria-labelledby="title">
+  <title id="title">From laser scan to Unity walkthrough</title>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#151326"/>
+      <stop offset="1" stop-color="#23182c"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0 0 L7 3.5 L0 7 Z" fill="#d28bc9"/>
+    </marker>
+  </defs>
+  <rect width="960" height="216" rx="18" fill="url(#background)"/>
+  <g font-family="system-ui, sans-serif">
+    <text x="28" y="36" fill="#fbf1fd" font-size="20" font-weight="700">From laser scan to walkthrough</text>
+    <g fill="#25213a" stroke="#564768">
+      <rect x="28" y="56" width="270" height="130" rx="11"/>
+      <rect x="345" y="56" width="270" height="130" rx="11"/>
+      <rect x="662" y="56" width="270" height="130" rx="11"/>
+    </g>
+    <g fill="#f3a285" font-size="13" font-weight="700" letter-spacing="1.5">
+      <text x="46" y="84">01  CAPTURE</text>
+      <text x="363" y="84">02  CONVERT</text>
+      <text x="680" y="84">03  EXPLORE</text>
+    </g>
+    <g fill="#fff5fc" font-size="20" font-weight="700">
+      <text x="46" y="118">LAS / LAZ</text>
+      <text x="363" y="118">R exporter</text>
+      <text x="680" y="118">Unity viewer</text>
+    </g>
+    <g fill="#e3d4e9" font-size="15">
+      <text x="46" y="146">Point positions and attributes</text>
+      <text x="46" y="166">Optional elevation GeoTIFF</text>
+      <text x="363" y="146">Build terrain and collisions</text>
+      <text x="363" y="166">Write points or streaming tiles</text>
+      <text x="680" y="146">Walk in first or third person</text>
+      <text x="680" y="166">Color by a LiDAR field</text>
+    </g>
+  </g>
+  <path d="M306 121h29 M623 121h29" fill="none" stroke="#d28bc9" stroke-width="2" marker-end="url(#arrow)"/>
+</svg>

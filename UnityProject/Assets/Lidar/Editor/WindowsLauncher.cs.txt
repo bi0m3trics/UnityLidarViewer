@@ -1,0 +1,64 @@
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+
+static class WindowsLauncher
+{
+    static int Main(string[] args)
+    {
+        if (args.Contains("--help") || args.Contains("-h"))
+        {
+            Console.WriteLine(@"LiDAR Walk
+Usage: LidarWalk.exe [options]
+
+  --help, -h           Show this help and exit.
+  --scene <folder>     Open an export folder containing manifest.json.
+                       Defaults to the bundled forest scene.
+  --benchmark          Log a timed render sample in the visible viewer.
+  --smoke-test         Run automated scene checks and exit.
+  -batchmode           Run without an interactive window for automated checks.
+  -logFile <path>      Write the viewer log to the specified file.
+
+Example: LidarWalk.exe --scene ""D:\Exports\site-streaming""");
+            return 0;
+        }
+
+        var player = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Player", "LidarWalk.exe");
+        if (!File.Exists(player))
+        {
+            Console.Error.WriteLine("The LiDAR Walk player is missing. Keep the Player folder beside LidarWalk.exe.");
+            return 1;
+        }
+
+        try
+        {
+            using (var process = Process.Start(new ProcessStartInfo(player, string.Join(" ", args.Select(Quote)))
+            {
+                UseShellExecute = false
+            }))
+            {
+                if (args.Contains("-batchmode") || args.Contains("--smoke-test"))
+                {
+                    process.WaitForExit();
+                    return process.ExitCode;
+                }
+            }
+            return 0;
+        }
+        catch (System.ComponentModel.Win32Exception error)
+        {
+            Console.Error.WriteLine("Could not start LiDAR Walk: " + error.Message);
+            return 1;
+        }
+    }
+
+    // Windows command-line quoting doubles backslashes before quotes and the closing delimiter.
+    static string Quote(string argument)
+    {
+        argument = Regex.Replace(argument, @"(\\*)""", "$1$1\\\"");
+        argument = Regex.Replace(argument, @"(\\+)$", "$1$1");
+        return "\"" + argument + "\"";
+    }
+}

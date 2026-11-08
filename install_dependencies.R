@@ -1,0 +1,11 @@
+# Installs converter packages beside the scripts, without administrator access.
+script <- sub('^--file=', '', grep('^--file=', commandArgs(), value = TRUE)[1])
+library_path <- file.path(normalizePath(dirname(script), mustWork = TRUE), '.r-library')
+dir.create(library_path, recursive = TRUE, showWarnings = FALSE)
+.libPaths(c(library_path, .libPaths()))
+packages <- c('rlas', 'terra', 'data.table', 'jsonlite', 'geometry', 'RANN')
+installed <- vapply(packages, requireNamespace, logical(1), quietly = TRUE, lib.loc = library_path)
+if (!all(installed)) install.packages(packages[!installed], lib = library_path, repos = 'https://cloud.r-project.org')
+if (!all(vapply(packages, requireNamespace, logical(1), quietly = TRUE, lib.loc = library_path)))
+  stop('Some packages could not be installed. Check the download messages and retry.')
+cat('R converter dependencies ready in ', library_path, '\n', sep = '')

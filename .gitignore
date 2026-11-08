@@ -107,3 +107,46 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Local builds, release binaries, and tool installations
+/Artifacts/
+/Builds/
+/Dist/*
+!/Dist/INSTALL.md
+/tools/nsis*/
+/reference/
+/exports/
+*.las
+*.laz
+*.unitypackage
+*.log
+.venv/
+.r-library/
+__pycache__/
+.pytest_cache/
+.test-tmp*/
+_retired-project-files/
+
+# Unity caches and imported or generated build inputs
+/UnityProject/Library/
+/UnityProject/Temp/
+/UnityProject/Obj/
+/UnityProject/Logs/
+/UnityProject/UserSettings/
+/UnityProject/Assets/MK/
+/UnityProject/Assets/MK.meta
+/UnityProject/Assets/Starter Assets/
+/UnityProject/Assets/Starter Assets.meta
+/UnityProject/Assets/Adventure_Character/
+/UnityProject/Assets/Adventure_Character.meta
+/UnityProject/Assets/StreamingAssets/
+/UnityProject/Assets/StreamingAssets.meta
+/UnityProject/Assets/Scenes/
+/UnityProject/Assets/Scenes.meta
+/UnityProject/Assets/Lidar/Prefabs/
+/UnityProject/Assets/Lidar/Prefabs.meta
+/UnityProject/Assets/Lidar/Textures/Adventure/
+/UnityProject/Assets/Lidar/Textures/Adventure.meta
+/UnityProject/Assets/Lidar/Settings/AdventureMaterials/
+/UnityProject/Assets/Lidar/Settings/AdventureMaterials.meta
+/OpenWinchester.cmd
