@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / "Builds/Windows"
 DIST = ROOT / "Dist"
-UNINSTALL_KEY = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\QuantitativeEcology.LidarWalk"
+UNINSTALL_KEY = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\QuantitativeEcology.UnityLidarViewer"
 
 
 def nsis_path(path):
@@ -20,11 +20,11 @@ def main():
     parser.add_argument("makensis", type=Path)
     args = parser.parse_args()
     player = BUILD / "Player"
-    files = [(BUILD / "LidarWalk.exe", Path("LidarWalk.exe"))]
+    files = [(BUILD / "UnityLidarViewer.exe", Path("UnityLidarViewer.exe"))]
     files.extend((file, file.relative_to(BUILD)) for file in player.glob("*.dll"))
-    for name in ("LidarWalk.exe", "UnityCrashHandler64.exe"):
+    for name in ("UnityLidarViewer.exe", "UnityCrashHandler64.exe"):
         files.append((player / name, Path("Player") / name))
-    for folder in ("D3D12", "LidarWalk_Data", "MonoBleedingEdge"):
+    for folder in ("D3D12", "UnityLidarViewer_Data", "MonoBleedingEdge"):
         for file in (player / folder).rglob("*"):
             if file.is_file() and file.suffix.lower() != ".ply":
                 files.append((file, file.relative_to(BUILD)))
@@ -33,19 +33,19 @@ def main():
     files.append((DIST / "INSTALL.md", Path("INSTALL.md")))
     if any(not source.is_file() for source, _ in files):
         raise SystemExit("Build the Windows viewer and prepare INSTALL.md before packaging.")
-    manifest = Path("Player/LidarWalk_Data/StreamingAssets/LidarScene/manifest.json")
+    manifest = Path("Player/UnityLidarViewer_Data/StreamingAssets/LidarScene/manifest.json")
     if not any(target == manifest for _, target in files):
         raise SystemExit("The demo scene is missing from the Windows build.")
     lines = [
         'Unicode true',
-        'VIProductVersion 0.1.0.0',
-        'VIAddVersionKey "ProductName" "LiDAR Walk"',
-        'VIAddVersionKey "FileDescription" "LiDAR Walk Windows Setup"',
-        'VIAddVersionKey "FileVersion" "0.1.0.0"',
-        'VIAddVersionKey "ProductVersion" "0.1"',
-        'Name "LiDAR Walk"',
-        f'OutFile "{nsis_path(DIST / "LiDAR-Walk-Setup.exe")}"',
-        r'InstallDir "$LOCALAPPDATA\LiDAR Walk"',
+        'VIProductVersion 0.1.1.0',
+        'VIAddVersionKey "ProductName" "Unity LiDAR Viewer"',
+        'VIAddVersionKey "FileDescription" "Unity LiDAR Viewer Windows Setup"',
+        'VIAddVersionKey "FileVersion" "0.1.1.0"',
+        'VIAddVersionKey "ProductVersion" "0.1.1"',
+        'Name "Unity LiDAR Viewer"',
+        f'OutFile "{nsis_path(DIST / "Unity-LiDAR-Viewer-Setup.exe")}"',
+        r'InstallDir "$LOCALAPPDATA\Unity LiDAR Viewer"',
         f'InstallDirRegKey HKCU "{UNINSTALL_KEY}" "InstallLocation"',
         'RequestExecutionLevel user',
         'SetCompressor /SOLID lzma',
@@ -60,11 +60,11 @@ def main():
         '!insertmacro MUI_LANGUAGE "English"',
         'Function .onInit',
         '  ${IfNot} ${RunningX64}',
-        '    MessageBox MB_OK|MB_ICONSTOP "LiDAR Walk requires 64-bit Windows."',
+        '    MessageBox MB_OK|MB_ICONSTOP "Unity LiDAR Viewer requires 64-bit Windows."',
         '    Abort',
         '  ${EndIf}',
         'FunctionEnd',
-        'Section "LiDAR Walk"',
+        'Section "Unity LiDAR Viewer"',
         '  SetShellVarContext current',
     ]
     folders = set()
@@ -80,18 +80,18 @@ def main():
     lines.extend([
         '  SetOutPath "$INSTDIR"',
         r'  WriteUninstaller "$INSTDIR\Uninstall.exe"',
-        r'  CreateShortcut "$SMPROGRAMS\LiDAR Walk.lnk" "$INSTDIR\LidarWalk.exe"',
-        f'  WriteRegStr HKCU "{UNINSTALL_KEY}" "DisplayName" "LiDAR Walk"',
-        f'  WriteRegStr HKCU "{UNINSTALL_KEY}" "DisplayVersion" "0.1"',
+        r'  CreateShortcut "$SMPROGRAMS\Unity LiDAR Viewer.lnk" "$INSTDIR\UnityLidarViewer.exe"',
+        f'  WriteRegStr HKCU "{UNINSTALL_KEY}" "DisplayName" "Unity LiDAR Viewer"',
+        f'  WriteRegStr HKCU "{UNINSTALL_KEY}" "DisplayVersion" "0.1.1"',
         f'  WriteRegStr HKCU "{UNINSTALL_KEY}" "InstallLocation" "$INSTDIR"',
-        f'  WriteRegStr HKCU "{UNINSTALL_KEY}" "DisplayIcon" "$INSTDIR\\LidarWalk.exe"',
+        f'  WriteRegStr HKCU "{UNINSTALL_KEY}" "DisplayIcon" "$INSTDIR\\UnityLidarViewer.exe"',
         f'  WriteRegStr HKCU "{UNINSTALL_KEY}" "UninstallString" \'"$INSTDIR\\Uninstall.exe"\'',
         f'  WriteRegDWORD HKCU "{UNINSTALL_KEY}" "NoModify" 1',
         f'  WriteRegDWORD HKCU "{UNINSTALL_KEY}" "NoRepair" 1',
         'SectionEnd',
         'Section "Uninstall"',
         '  SetShellVarContext current',
-        r'  Delete "$SMPROGRAMS\LiDAR Walk.lnk"',
+        r'  Delete "$SMPROGRAMS\Unity LiDAR Viewer.lnk"',
     ])
     lines.extend(f'  Delete "$INSTDIR\\{nsis_path(target)}"' for _, target in files)
     lines.extend(f'  RMDir "$INSTDIR\\{nsis_path(folder)}"'
@@ -102,8 +102,8 @@ def main():
         f'  DeleteRegKey HKCU "{UNINSTALL_KEY}"',
         'SectionEnd',
     ])
-    with TemporaryDirectory(prefix="lidar-walk-installer-") as directory:
-        script = Path(directory) / "lidar-walk-setup.nsi"
+    with TemporaryDirectory(prefix="unity-lidar-viewer-installer-") as directory:
+        script = Path(directory) / "unity-lidar-viewer-setup.nsi"
         script.write_text("\n".join(lines) + "\n", encoding="utf-8-sig")
         subprocess.run([str(args.makensis.resolve()), "/V2", str(script)], check=True)
 

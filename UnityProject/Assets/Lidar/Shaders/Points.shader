@@ -1,4 +1,4 @@
-Shader "LidarWalk/Points"
+Shader "UnityLidarViewer/Points"
 {
     Properties
     {

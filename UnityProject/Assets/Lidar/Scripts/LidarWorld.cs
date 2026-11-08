@@ -9,7 +9,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace LidarWalk
+namespace UnityLidarViewer
 {
     [Serializable] public class SceneManifest
     {
@@ -275,7 +275,7 @@ namespace LidarWalk
             datasetFolder = folder;
             Manifest = JsonUtility.FromJson<SceneManifest>(File.ReadAllText(Path.Combine(folder,"manifest.json")));
             if (Manifest.version != 1 && Manifest.version != 2) throw new InvalidDataException("Unsupported LiDAR scene version.");
-            if (!pointShader) pointShader = Shader.Find("LidarWalk/Points");
+            if (!pointShader) pointShader = Shader.Find("UnityLidarViewer/Points");
             if (!pointShader || !pointShader.isSupported) throw new InvalidOperationException("Point shader unavailable; use a desktop DX11/DX12 GPU.");
             points = new Material(pointShader);
             paletteAtlas = Resources.Load<Texture2D>("LidarPalettes");
@@ -591,7 +591,7 @@ namespace LidarWalk
             Rect panel = PanelRect;
             GUILayout.BeginArea(new Rect(12, 28, panel.width-24, panel.height-40));
             panelScroll = GUILayout.BeginScrollView(panelScroll);
-            GUILayout.Label($"LiDAR Walk | {Manifest.displayPointCount:N0} points");
+            GUILayout.Label($"Unity LiDAR Viewer | {Manifest.displayPointCount:N0} points");
             showPerformance = GUILayout.Toggle(showPerformance, "Show performance counters");
             if (streamer != null)
             {

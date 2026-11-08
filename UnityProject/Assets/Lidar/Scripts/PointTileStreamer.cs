@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace LidarWalk
+namespace UnityLidarViewer
 {
     [Serializable] public sealed class PointTile
     {

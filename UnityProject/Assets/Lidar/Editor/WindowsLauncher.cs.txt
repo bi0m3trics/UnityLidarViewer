@@ -10,8 +10,8 @@ static class WindowsLauncher
     {
         if (args.Contains("--help") || args.Contains("-h"))
         {
-            Console.WriteLine(@"LiDAR Walk
-Usage: LidarWalk.exe [options]
+            Console.WriteLine(@"Unity LiDAR Viewer
+Usage: UnityLidarViewer.exe [options]
 
   --help, -h           Show this help and exit.
   --scene <folder>     Open an export folder containing manifest.json.
@@ -21,14 +21,14 @@ Usage: LidarWalk.exe [options]
   -batchmode           Run without an interactive window for automated checks.
   -logFile <path>      Write the viewer log to the specified file.
 
-Example: LidarWalk.exe --scene ""D:\Exports\site-streaming""");
+Example: UnityLidarViewer.exe --scene ""D:\Exports\site-streaming""");
             return 0;
         }
 
-        var player = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Player", "LidarWalk.exe");
+        var player = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Player", "UnityLidarViewer.exe");
         if (!File.Exists(player))
         {
-            Console.Error.WriteLine("The LiDAR Walk player is missing. Keep the Player folder beside LidarWalk.exe.");
+            Console.Error.WriteLine("The Unity LiDAR Viewer player is missing. Keep the Player folder beside UnityLidarViewer.exe.");
             return 1;
         }
 
@@ -49,7 +49,7 @@ Example: LidarWalk.exe --scene ""D:\Exports\site-streaming""");
         }
         catch (System.ComponentModel.Win32Exception error)
         {
-            Console.Error.WriteLine("Could not start LiDAR Walk: " + error.Message);
+            Console.Error.WriteLine("Could not start Unity LiDAR Viewer: " + error.Message);
             return 1;
         }
     }

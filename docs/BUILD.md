@@ -1,4 +1,4 @@
-# Build LiDAR Walk
+# Build Unity LiDAR Viewer
 
 Use Unity **6000.4.11f1** with Windows Build Support. Open `UnityProject` through Unity Hub. The Unity Package Manager restores URP, Cinemachine, and Input System from the project manifest.
 
@@ -28,9 +28,9 @@ Rscript install_dependencies.R
 Rscript export_to_unity.R .\BLK360_ctrl.laz --field intensity --out .\UnityProject\Assets\StreamingAssets\LidarScene
 ```
 
-In Unity, choose **LiDAR → Create Walkthrough Scene** and open `Assets/Scenes/LidarWalk.unity`. Press Play to preview it. Choose **LiDAR → Build Windows Viewer** to write the Windows launcher and player to `Builds/Windows`. Keep the `Player` folder beside the launcher.
+In Unity, choose **LiDAR → Create Walkthrough Scene** and open `Assets/Scenes/UnityLidarViewer.unity`. Press Play to preview it. Choose **LiDAR → Build Windows Viewer** to write the Windows launcher and player to `Builds/Windows`. Keep the `Player` folder beside the launcher.
 
-To package the build with NSIS on Windows, run the following from the repository root. The setup program is written to `Dist/LiDAR-Walk-Setup.exe`.
+To package the build with NSIS on Windows, run the following from the repository root. The setup program is written to `Dist/Unity-LiDAR-Viewer-Setup.exe`.
 
 ```powershell
 python tools/package_windows.py "C:\Program Files (x86)\NSIS\makensis.exe"

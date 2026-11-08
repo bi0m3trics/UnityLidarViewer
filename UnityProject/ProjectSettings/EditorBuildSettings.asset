@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/LidarWalk.unity
+    path: Assets/Scenes/UnityLidarViewer.unity
     guid: 6922ae1137e43b744a43b0e492b1aab6
   m_configObjects: {}

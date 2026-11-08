@@ -12,7 +12,7 @@ using UnityEngine.InputSystem;
 using StarterAssets;
 using MK.Glow.URP;
 
-namespace LidarWalk.Editor
+namespace UnityLidarViewer.Editor
 {
     public static class ProjectTools
     {
@@ -31,7 +31,7 @@ namespace LidarWalk.Editor
             ConfigurePipeline();
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
             var root=new GameObject("LiDAR World").AddComponent<LidarWorld>();
-            root.pointShader=Shader.Find("LidarWalk/Points");
+            root.pointShader=Shader.Find("UnityLidarViewer/Points");
             root.playerPrefab=PrepareControllers();root.showGroundSurface=false;root.enableObstacleCollision=true;root.useSlimObstacleCollision=true;
             var volume=new GameObject("MK Glow Lite + tone mapping").AddComponent<Volume>();volume.isGlobal=true;
             volume.sharedProfile=CreateGlowProfile();root.glowVolume=volume;
@@ -41,13 +41,13 @@ namespace LidarWalk.Editor
             PlayerSettings.colorSpace=ColorSpace.Linear;
             PlayerSettings.defaultScreenWidth=1440;PlayerSettings.defaultScreenHeight=900;
             PlayerSettings.fullScreenMode=FullScreenMode.Windowed;PlayerSettings.resizableWindow=true;
-            PlayerSettings.runInBackground=true;PlayerSettings.companyName="Local tools";PlayerSettings.productName="LiDAR Walk";
+            PlayerSettings.runInBackground=true;PlayerSettings.companyName="Local tools";PlayerSettings.productName="Unity LiDAR Viewer";
             var settings=new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset")[0]);
             var input=settings.FindProperty("activeInputHandler");if(input!=null){input.intValue=2;settings.ApplyModifiedPropertiesWithoutUndo();}
             IncludeShaders();
             Directory.CreateDirectory("Assets/Scenes");
-            EditorSceneManager.SaveScene(SceneManager.GetActiveScene(),"Assets/Scenes/LidarWalk.unity");
-            EditorBuildSettings.scenes=new[]{new EditorBuildSettingsScene("Assets/Scenes/LidarWalk.unity",true)};
+            EditorSceneManager.SaveScene(SceneManager.GetActiveScene(),"Assets/Scenes/UnityLidarViewer.unity");
+            EditorBuildSettings.scenes=new[]{new EditorBuildSettingsScene("Assets/Scenes/UnityLidarViewer.unity",true)};
             AssetDatabase.SaveAssets();Debug.Log("LIDAR_SCENE_CREATED URP + Starter Assets controllers + Adventure Character + MK Glow Lite.");
         }
 
@@ -265,9 +265,9 @@ namespace LidarWalk.Editor
             for(int i=shaders.arraySize-1;i>=0;i--)
             {
                 var s=shaders.GetArrayElementAtIndex(i).objectReferenceValue as Shader;
-                if(!s||s.name=="LidarWalk/Bloom"||s.name=="Standard")shaders.DeleteArrayElementAtIndex(i);
+                if(!s||s.name=="UnityLidarViewer/Bloom"||s.name=="Standard")shaders.DeleteArrayElementAtIndex(i);
             }
-            foreach(string name in new[]{"LidarWalk/Points","Hidden/MK/Glow/URP/Copy"})
+            foreach(string name in new[]{"UnityLidarViewer/Points","Hidden/MK/Glow/URP/Copy"})
             {
                 var shader=Shader.Find(name);if(!shader)throw new Exception("Missing shader: "+name);
                 bool found=false;for(int i=0;i<shaders.arraySize;i++)if(shaders.GetArrayElementAtIndex(i).objectReferenceValue==shader)found=true;
@@ -278,7 +278,7 @@ namespace LidarWalk.Editor
 
         public static void SmokeTest()
         {
-            const string scene="Assets/Scenes/LidarWalk.unity";
+            const string scene="Assets/Scenes/UnityLidarViewer.unity";
             if(File.Exists(scene))EditorSceneManager.OpenScene(scene);else CreateScene();
             SessionState.SetBool("LidarSmokeTest",true);EditorApplication.isPlaying=true;
         }
@@ -311,7 +311,7 @@ namespace LidarWalk.Editor
                     }
                     VerifyPlayer(explorer,true);
                     if(!(GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset))throw new Exception("URP is not active.");
-                    var shader=Shader.Find("LidarWalk/Points");if(!shader.isSupported||ShaderUtil.ShaderHasError(shader))throw new Exception("Point shader invalid.");
+                    var shader=Shader.Find("UnityLidarViewer/Points");if(!shader.isSupported||ShaderUtil.ShaderHasError(shader))throw new Exception("Point shader invalid.");
                     if(!world.glowVolume.profile.TryGet<MKGlowLite>(out var glow)||!glow.IsActive())throw new Exception("MK Glow Lite volume is inactive.");
                     if(UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include,FindObjectsSortMode.None).Any(b=>b&&(b.GetType().Name=="HikerOutfit"||b.GetType().Name=="ShepherdCompanion"||b.GetType().Name=="SimpleBloom")))throw new Exception("Removed custom content remains active.");
                     if(world.Colliders.Count!=world.Manifest.collisionFiles.Length+1)throw new Exception("Collider count mismatch.");
@@ -434,7 +434,7 @@ namespace LidarWalk.Editor
         [MenuItem("LiDAR/Build Windows Viewer")]
         public static void BuildWindows()
         {
-            if(!File.Exists("Assets/Scenes/LidarWalk.unity"))CreateScene();
+            if(!File.Exists("Assets/Scenes/UnityLidarViewer.unity"))CreateScene();
             const string explorerPath = "Assets/Lidar/Prefabs/Explorer.prefab";
             var adventure = PrepareAdventurePlayer();
             var explorer = PrefabUtility.LoadPrefabContents(explorerPath);
@@ -448,9 +448,9 @@ namespace LidarWalk.Editor
             string[] args = Environment.GetCommandLineArgs();
             int outputIndex = Array.IndexOf(args, "--build-output");
             if (outputIndex >= 0 && outputIndex + 1 >= args.Length) throw new ArgumentException("--build-output requires an executable path.");
-            string path=Path.GetFullPath(outputIndex >= 0 ? args[outputIndex + 1] : "../Builds/Windows/LidarWalk.exe");
+            string path=Path.GetFullPath(outputIndex >= 0 ? args[outputIndex + 1] : "../Builds/Windows/UnityLidarViewer.exe");
             Directory.CreateDirectory(Path.GetDirectoryName(path));
-            string playerPath = Path.Combine(Path.GetDirectoryName(path), "Player", "LidarWalk.exe");
+            string playerPath = Path.Combine(Path.GetDirectoryName(path), "Player", "UnityLidarViewer.exe");
             Directory.CreateDirectory(Path.GetDirectoryName(playerPath));
             var report=BuildPipeline.BuildPlayer(EditorBuildSettings.scenes,playerPath,BuildTarget.StandaloneWindows64,BuildOptions.None);
             if(report.summary.result!=UnityEditor.Build.Reporting.BuildResult.Succeeded)throw new Exception("Build failed: "+report.summary.result);

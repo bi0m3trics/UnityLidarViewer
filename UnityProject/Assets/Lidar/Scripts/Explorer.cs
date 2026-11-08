@@ -4,7 +4,7 @@ using UnityEngine.Rendering.Universal;
 using Unity.Cinemachine;
 using StarterAssets;
 
-namespace LidarWalk
+namespace UnityLidarViewer
 {
     // Switches between the actual vendor player and Cinemachine prefabs.
     // Input, look, movement, jumping and third-person animation remain vendor code.

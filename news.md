@@ -1,5 +1,9 @@
 # Revision history
 
+## v0.1.1 · Product rename
+
+- Renamed the app, launcher, installer, and documentation to Unity LiDAR Viewer.
+
 ## v0.1 · First packaged release
 
 - **Export and coordinate setup.** Built a LAS and LAZ converter with Unity-local coordinates, terrain from an aligned DEM, solid collision geometry, and optional PLY output.

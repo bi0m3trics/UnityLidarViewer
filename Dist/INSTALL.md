@@ -1,16 +1,18 @@
-# LiDAR Walk for Windows
+# Unity LiDAR Viewer for Windows
 
-LiDAR Walk is a first- and third-person viewer for exploring LiDAR scans. In third person you play as Adventure Character, wearing a dark orange jacket, khaki pants, and a dark gray backpack. The included forest scene has solid terrain and tight trunk collision. You can color the points by RGB or an exported LiDAR field, choose a palette, and adjust point radius and bloom.
+Unity LiDAR Viewer is a first- and third-person viewer for exploring LiDAR scans. In third person you play as Adventure Character, wearing a dark orange jacket, khaki pants, and a dark gray backpack. The included forest scene has solid terrain and tight trunk collision. You can color the points by RGB or an exported LiDAR field, choose a palette, and adjust point radius and bloom.
 
 ## Install and run
 
-1. Run **LiDAR-Walk-Setup.exe** on 64-bit Windows 10 or 11 with a DirectX 11 or 12 graphics device.
-2. Follow the setup prompts. The default destination is **%LOCALAPPDATA%\LiDAR Walk** for the current user.
-3. Launch **LiDAR Walk** from the Start menu. The included forest scene opens in first person. Press **V** to switch to third person.
+If you installed v0.1, uninstall it from Windows Installed apps before installing v0.1.1. Keep any scene exports in their own folders.
 
-The installer includes the Unity runtime, MK Glow Lite, controllers, and demo scene. Viewing an exported scene requires only the installed app and scene folder. To uninstall, use **Settings > Apps > Installed apps > LiDAR Walk**.
+1. Run **Unity-LiDAR-Viewer-Setup.exe** on 64-bit Windows 10 or 11 with a DirectX 11 or 12 graphics device.
+2. Follow the setup prompts. The default destination is **%LOCALAPPDATA%\Unity LiDAR Viewer** for the current user.
+3. Launch **Unity LiDAR Viewer** from the Start menu. The included forest scene opens in first person. Press **V** to switch to third person.
 
-From the folder containing the viewer, run `.\LidarWalk.exe --help` in PowerShell to see its launch options.
+The installer includes the Unity runtime, MK Glow Lite, controllers, and demo scene. Viewing an exported scene requires only the installed app and scene folder. To uninstall, use **Settings > Apps > Installed apps > Unity LiDAR Viewer**.
+
+From the folder containing the viewer, run `.\UnityLidarViewer.exe --help` in PowerShell to see its launch options.
 
 ## Controls
 
@@ -35,10 +37,10 @@ The field menu shows the values present in the dataset, including RGB where avai
 Install 64-bit R 4.4 or later to run the bundled converter. Make `Rscript` available on PATH, or use its full path such as `C:\Program Files\R\R-4.6.0\bin\Rscript.exe`. Open PowerShell and run the following commands with your own input and output paths. Use a new output folder outside the installation directory.
 
 ```powershell
-$app = Join-Path $env:LOCALAPPDATA 'LiDAR Walk'
+$app = Join-Path $env:LOCALAPPDATA 'Unity LiDAR Viewer'
 Rscript "$app\Exporter\install_dependencies.R"
 Rscript "$app\Exporter\export_to_unity.R" "D:\Scans\site.laz" --out "D:\Exports\site" --streaming
-& "$app\LidarWalk.exe" --scene "D:\Exports\site"
+& "$app\UnityLidarViewer.exe" --scene "D:\Exports\site"
 ```
 
 If you chose a custom installation directory, set `$app` to that location. Dependency installation needs an internet connection and stores the packages beside the exporter in `.r-library`. The converter uses rlas, terra, data.table, jsonlite, geometry, and RANN. Keep the complete exported folder together when moving it to another computer. Older exports still load with the fields they contain. Re-export from the LAZ to populate the full field menu.
@@ -63,14 +65,14 @@ The export still defaults to a two-million-point sample. Raise `--max-points` to
 
 ```powershell
 Rscript "$app\Exporter\export_to_unity.R" "D:\Scans\site.laz" --out "D:\Exports\site-streaming" --max-points 50000000 --streaming
-& "$app\LidarWalk.exe" --scene "D:\Exports\site-streaming"
+& "$app\UnityLidarViewer.exe" --scene "D:\Exports\site-streaming"
 ```
 
 You can tile an existing export with field sidecars, using a new output folder. This preserves its current point sample, normalized fields, terrain and collisions.
 
 ```powershell
 Rscript "$app\Exporter\tile_scene.R" "D:\Exports\site" --out "D:\Exports\site-streaming"
-& "$app\LidarWalk.exe" --scene "D:\Exports\site-streaming"
+& "$app\UnityLidarViewer.exe" --scene "D:\Exports\site-streaming"
 ```
 
 If **Point budget** or **View distance** is missing in Esc settings, check `version` in the scene's `manifest.json`. Use the tiling command above to convert a version 1 export with field sidecars, then open the new version 2 folder.
