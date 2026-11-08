@@ -17,20 +17,23 @@ source(file.path(export_root, 'tile_scene.R'))
 
 parse_options <- function(argv) {
   defaults <- list(out = 'UnityProject/Assets/StreamingAssets/LidarScene', field = 'intensity',
-    max_points = 2000000, voxel = .5, min_voxel_points = 5, max_voxels = 2000000,
+    max_points = Inf, voxel = .5, min_voxel_points = 5, max_voxels = 2000000,
     ground_clearance = .25, dem_stride = 2, scale = 1, dem_resolution = .5,
-    ptd_seed_size = 8, ptd_distance = .45, ptd_angle = 15, ply = FALSE, streaming = FALSE, tile_size = 16)
+    ptd_seed_size = 8, ptd_distance = .45, ptd_angle = 15, ply = FALSE, streaming = TRUE, tile_size = 16)
   if (!length(argv) || any(argv %in% c('--help', '-h'))) {
     cat('Usage: Rscript export_to_unity.R input.laz [dem.tif] --out folder [options]\n',
       'Omit dem.tif to estimate terrain using progressive TIN densification.\n',
       'Options and defaults\n', sep = '')
-    for (name in names(defaults)) cat('  --', gsub('_', '-', name), '  ', as.character(defaults[[name]]), '\n', sep = '')
+    for (name in names(defaults)) cat('  --', gsub('_', '-', name), '  ',
+      if (name == 'max_points') 'all points (set a positive integer to sample)' else as.character(defaults[[name]]), '\n', sep = '')
+    cat('  --no-streaming  export a non-tiled scene\n')
     return(NULL)
   }
   positional <- character(); i <- 1L
   while (i <= length(argv)) {
     value <- argv[i]
     if (!startsWith(value, '--')) { positional <- c(positional, value); i <- i + 1L; next }
+    if (value == '--no-streaming') { defaults$streaming <- FALSE; i <- i + 1L; next }
     name <- gsub('-', '_', substring(value, 3))
     if (!name %in% names(defaults)) stop('Unknown option ', value)
     if (name %in% c('ply', 'streaming')) { defaults[[name]] <- TRUE; i <- i + 1L; next }
@@ -41,7 +44,8 @@ parse_options <- function(argv) {
   if (!length(positional) || length(positional) > 2) stop('Supply a LAS/LAZ and optionally a DEM.')
   defaults$laz <- normalizePath(positional[1], mustWork = TRUE)
   defaults$dem <- if (length(positional) == 2) normalizePath(positional[2], mustWork = TRUE) else NULL
-  positive <- c('max_points', 'voxel', 'min_voxel_points', 'max_voxels', 'dem_stride', 'scale',
+  if (is.na(defaults$max_points) || defaults$max_points <= 0) stop('max_points must be positive.')
+  positive <- c('voxel', 'min_voxel_points', 'max_voxels', 'dem_stride', 'scale',
     'dem_resolution', 'ptd_seed_size', 'ptd_distance', 'ptd_angle', 'tile_size')
   for (name in positive) if (!is.finite(defaults[[name]]) || defaults[[name]] <= 0) stop(name, ' must be finite and positive.')
   for (name in c('max_points', 'min_voxel_points', 'max_voxels', 'dem_stride'))
@@ -157,7 +161,7 @@ export_scene <- function(args) {
   display_fields <- c(scalar_fields, NA_character_)
   read_las_chunks(las, header, schema, function(points, seen, n) {
     xyz <- las_coordinates(points, header)
-    usable <- is.finite(xyz[, 1]) & is.finite(xyz[, 2]) & is.finite(xyz[, 3]) & points$withheld == 0
+    finite <- is.finite(xyz[, 1]) & is.finite(xyz[, 2]) & is.finite(xyz[, 3])
     cl <- points$classification
     classes <- table(cl)
     for (key in names(classes)) {
@@ -168,7 +172,7 @@ export_scene <- function(args) {
     local <- sweep(xyz[, c(1, 3, 2), drop = FALSE], 2, origin[c(1, 3, 2)]) * args$scale
     ground <- sample_dem(raster, values, xyz[, 1], xyz[, 2])
     height <- (xyz[, 3] - ground) * args$scale
-    solid <- usable & !cl %in% c(2, 7, 18)
+    solid <- finite & points$withheld == 0 & !cl %in% c(2, 7, 18)
     new_columns <- collect_columns(local, height, solid)
     columns <<- rbindlist(list(columns, new_columns))[, list(count = sum(count)), by = c('x', 'z', 'band')]
     obstacle <- which(solid & (!is.finite(ground) | height > args$ground_clearance))
@@ -176,7 +180,7 @@ export_scene <- function(args) {
     new_counts <- data.table(x = voxels[, 1], y = voxels[, 2], z = voxels[, 3])[, list(count = .N), by = c('x', 'y', 'z')]
     counts <<- rbindlist(list(counts, new_counts))[, list(count = sum(count)), by = c('x', 'y', 'z')]
     if (nrow(counts) > args$max_voxels) stop('Collision voxel budget exceeded. Increase --voxel or --max-voxels.')
-    ids <- which(usable & ((seq_len(n) - 1 + seen) %% step == 0))
+    ids <- if (step == 1) which(finite) else which(finite & ((seq_len(n) - 1 + seen) %% step == 0))
     if (length(ids)) {
       rgba <- matrix(180, length(ids), 4); rgba[, 4] <- 255
       if ('red' %in% fields) {

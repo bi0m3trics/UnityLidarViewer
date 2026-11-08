@@ -1,5 +1,7 @@
 # Unity LiDAR Viewer
 
+> The current source includes the defaults and controls documented below. The v0.1.1 installer predates these changes.
+
 Walk through a laser scan in Unity. Unity LiDAR Viewer turns a LAS or LAZ point cloud into an explorable scene with terrain, tree collisions, and interactive coloring. This image shows the bundled BLK360 forest in third person, colored by LiDAR intensity with Magma and bloom.
 
 ![Adventure Character in a glowing Magma-colored BLK360 forest](docs/media/forest-third-person.png)
@@ -10,14 +12,14 @@ Walk through a laser scan in Unity. Unity LiDAR Viewer turns a LAS or LAZ point 
 
 1. Download **Unity-LiDAR-Viewer-Setup.exe** from the v0.1.1 release and run it on 64-bit Windows 10 or 11 with a DirectX 11 or 12 graphics device.
 2. Launch **Unity LiDAR Viewer** from the Start menu. The bundled BLK360 forest opens in first person. Mouse look becomes available when the opening reveal finishes.
-3. Move with **WASD**, run with **Shift**, and jump with **Space**. Use **V** to switch perspective, **Esc** for settings, **T** to show the terrain, and **Alt+Enter** to toggle fullscreen.
+3. Move with **WASD**, run with **Shift**, and jump with **Space**. Use **V** to cycle first person, third person, and free flight, **Esc** for settings, **T** to show the terrain, and **Alt+Enter** to toggle fullscreen.
 
 Unity and R are unnecessary for playing the bundled demo or opening an existing export. Install 64-bit R to convert new scans.
 
 ## What you can explore
 
 - Color returns by RGB, intensity, classification, height above ground, or scalar fields available in the export. Choose Magma, Viridis, Plasma, Inferno, Cividis, Turbo, and other palettes.
-- Adjust point size, contrast, emission, and bloom. Compare the same forest scan in first person below.
+- Adjust point radius with **Alt + mouse wheel**. Settings also exposes contrast, emission, bloom, and depth shading. Compare the same forest scan in first person below.
 - Walk on a solid elevation surface and around tight tree-trunk collision proxies. Toggle the terrain and ground points independently.
 - Stream large exports from spatial tiles with distance-based detail, a point budget, a memory cache, and performance counters.
 - Convert LAS or LAZ with an aligned elevation GeoTIFF, or let the R exporter estimate a DEM using progressive TIN densification.
@@ -33,11 +35,11 @@ The default installation is in `%LOCALAPPDATA%\Unity LiDAR Viewer`. In PowerShel
 ```powershell
 $app = Join-Path $env:LOCALAPPDATA 'Unity LiDAR Viewer'
 Rscript "$app\Exporter\install_dependencies.R"
-Rscript "$app\Exporter\export_to_unity.R" "D:\Scans\forest.laz" --out "D:\Exports\forest" --streaming
+Rscript "$app\Exporter\export_to_unity.R" "D:\Scans\forest.laz" --out "D:\Exports\forest"
 & "$app\UnityLidarViewer.exe" --scene "D:\Exports\forest"
 ```
 
-For an existing export, run only the last command. Keep its entire folder together. Run the viewer or exporter with `--help` for available options. See the [installation guide](Dist/INSTALL.md) for DEM inputs, large exports, and controls.
+Exports keep every point with finite coordinates by default. The exporter tiles the full scan by default so the viewer can load points on demand. Pass `--no-streaming` to load the full cloud into memory. Use `--max-points` only for an explicitly sampled export. The bundled forest demo is a smaller sample. For an existing export, run only the last command. Keep its entire folder together. Run the viewer or exporter with `--help` for available options. See the [installation guide](Dist/INSTALL.md) for DEM inputs, large exports, and controls.
 
 ![Workflow from LAS or LAZ through the R exporter to a Unity walkthrough](docs/media/workflow.svg)
 

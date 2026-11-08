@@ -16,7 +16,7 @@ run_tests <- function() {
   terra::values(dem) <- c(NA, rep(10, 63))
   tif <- file.path(root, 'test.tif'); terra::writeRaster(dem, tif)
   out <- file.path(root, 'scene')
-  args <- parse_options(c(laz, tif, '--out', out, '--max-points', '4', '--dem-stride', '1', '--min-voxel-points', '1', '--ply'))
+  args <- parse_options(c(laz, tif, '--out', out, '--no-streaming', '--max-points', '4', '--dem-stride', '1', '--min-voxel-points', '1', '--ply'))
   export_scene(args)
   manifest <- jsonlite::read_json(file.path(out, 'manifest.json'), simplifyVector = TRUE)
   stopifnot(manifest$displayPointCount == 4, manifest$collisionVoxelCount > 0)
@@ -64,11 +64,11 @@ run_tests <- function() {
     stopifnot(all(as.integer(compact[16, index == 1]) == 0))
   }
   stopifnot(identical(sort(observed), 1:4))
-  streaming_args <- args
-  streaming_args$out <- file.path(root, 'streaming-cli')
-  streaming_args$streaming <- TRUE
+  streaming_args <- parse_options(c(laz, tif, '--out', file.path(root, 'streaming-cli'), '--ply'))
   streamed <- export_scene(streaming_args)
-  stopifnot(streamed$version == 2, file.exists(file.path(streaming_args$out, 'cloud.ply')))
+  stopifnot(streamed$version == 2, streamed$displayPointCount == nrow(points),
+    sum(vapply(streamed$tiles, function(tile) tile$count, numeric(1))) == nrow(points),
+    file.exists(file.path(streaming_args$out, 'cloud.ply')))
   stopifnot(inherits(try(export_scene(args), silent = TRUE), 'try-error'))
   modern <- copy(points)
   modern[, `:=`(Classification = 200L, Overlap_flag = TRUE, ScannerChannel = 2L)]
@@ -123,7 +123,8 @@ run_tests <- function() {
   unclassified <- file.path(root, 'unclassified.laz')
   rlas::write.las(unclassified, rlas::header_create(cloud), cloud)
   ptd_out <- file.path(root, 'ptd')
-  export_scene(parse_options(c(unclassified, '--out', ptd_out)))
+  full <- export_scene(parse_options(c(unclassified, '--out', ptd_out, '--no-streaming')))
+  stopifnot(full$displayPointCount == nrow(cloud))
   ground <- terra::rast(file.path(ptd_out, 'generated-dem.tif'), guessCRS = FALSE)
   estimate <- terra::extract(ground, matrix(c(11.25, 11.25), nrow = 1))[1, 1]
   stopifnot(abs(estimate - 10.225) < .12)

@@ -1,5 +1,7 @@
 # Unity LiDAR Viewer for Windows
 
+> The current source includes the defaults and controls documented below. The v0.1.1 installer predates these changes.
+
 Unity LiDAR Viewer is a first- and third-person viewer for exploring LiDAR scans. In third person you play as Adventure Character, wearing a dark orange jacket, khaki pants, and a dark gray backpack. The included forest scene has solid terrain and tight trunk collision. You can color the points by RGB or an exported LiDAR field, choose a palette, and adjust point radius and bloom.
 
 ## Install and run
@@ -8,7 +10,7 @@ If you installed v0.1, uninstall it from Windows Installed apps before installin
 
 1. Run **Unity-LiDAR-Viewer-Setup.exe** on 64-bit Windows 10 or 11 with a DirectX 11 or 12 graphics device.
 2. Follow the setup prompts. The default destination is **%LOCALAPPDATA%\Unity LiDAR Viewer** for the current user.
-3. Launch **Unity LiDAR Viewer** from the Start menu. The included forest scene opens in first person. Press **V** to switch to third person.
+3. Launch **Unity LiDAR Viewer** from the Start menu. The included forest scene opens in first person. Press **V** to cycle through grounded first person, third person, and free flight.
 
 The installer includes the Unity runtime, MK Glow Lite, controllers, and demo scene. Viewing an exported scene requires only the installed app and scene folder. To uninstall, use **Settings > Apps > Installed apps > Unity LiDAR Viewer**.
 
@@ -21,12 +23,14 @@ From the folder containing the viewer, run `.\UnityLidarViewer.exe --help` in Po
 | WASD / Shift / Space | Move / sprint / jump |
 | Mouse | Look around |
 | Esc | Open / close the settings popup and release / capture the mouse |
-| V / R | Switch perspective / respawn |
+| V / R | Cycle view mode / reset position |
+| Space / Ctrl (free flight) | Rise / descend |
+| Alt + mouse wheel | Adjust point radius while exploring |
 | Field dropdown / F | Select / cycle through exported fields |
 | Palette dropdown / P | Select / cycle through palettes |
 | G / T / C | Toggle ground points / terrain surface / collision preview |
 
-The settings popup has a dark, nearly opaque background. The optional performance overlay shows FPS, drawn points, point-cache memory and pending loads. For streaming scenes, use the settings sliders to change the visible point budget, cache size, full-detail distance and viewing distance.
+The default view uses RGB when available, a 0.7 px point radius, neutral intensity contrast, and zero emission and bloom. Depth shading is on by default and can be adjusted in Settings. Free flight starts at the current camera. Switching back to first person returns you to your last grounded position. Enable **Show performance counters** to see FPS, drawn points, point-cache memory and pending loads. For streaming scenes, use the settings sliders to change the visible point budget, cache size, full-detail distance and viewing distance.
 
 At startup, a progress bar stays centered while the viewer prepares the scene and reveals the point cloud. Press **Esc** during the reveal to skip it. Mouse look becomes available when the opening view is ready.
 
@@ -39,7 +43,7 @@ Install 64-bit R 4.4 or later to run the bundled converter. Make `Rscript` avail
 ```powershell
 $app = Join-Path $env:LOCALAPPDATA 'Unity LiDAR Viewer'
 Rscript "$app\Exporter\install_dependencies.R"
-Rscript "$app\Exporter\export_to_unity.R" "D:\Scans\site.laz" --out "D:\Exports\site" --streaming
+Rscript "$app\Exporter\export_to_unity.R" "D:\Scans\site.laz" --out "D:\Exports\site"
 & "$app\UnityLidarViewer.exe" --scene "D:\Exports\site"
 ```
 
@@ -52,19 +56,21 @@ With a LAZ alone, the converter uses grid-thinned progressive TIN densification 
 To use your own aligned elevation GeoTIFF, pass it as the second positional argument.
 
 ```powershell
-Rscript "$app\Exporter\export_to_unity.R" "D:\Scans\site.laz" "D:\Scans\site_dem.tif" --out "D:\Exports\site-with-dem" --streaming
+Rscript "$app\Exporter\export_to_unity.R" "D:\Scans\site.laz" "D:\Scans\site_dem.tif" --out "D:\Exports\site-with-dem"
 ```
 
 Use `--help` for the PTD cell size, seed spacing, distance, and angle settings.
 
 ## Large point clouds
 
-Add `--streaming` to export spatial tiles. The viewer loads visible tiles in the background, reduces detail with distance and spreads GPU uploads across frames. Defaults are a three-million-point draw budget, a 256 MB point cache, full detail within 20 m and a 300 m viewing distance. These limits apply to points. Terrain, collision geometry and the Unity runtime use additional memory.
+New exports use spatial tiles by default. The viewer loads visible tiles in the background, reduces detail with distance and spreads GPU uploads across frames. Defaults are a four-million-point draw budget, a 1,024 MB point cache, full detail within 30 m and a 90 m viewing distance. These limits apply to points. Terrain, collision geometry and the Unity runtime use additional memory.
 
-The export still defaults to a two-million-point sample. Raise `--max-points` to retain more source detail. To retain every point, set it to the source point count or a higher value. Preparation time and disk use increase with that limit. For example, this keeps up to 50 million display points.
+Both export modes keep every point with finite coordinates by default. Use `--no-streaming` only when you want an untiled scene that loads the full cloud into GPU memory. Set `--max-points` only if you want a smaller, sampled export.
+
+In `manifest.json`, compare `displayPointCount` to `sourcePointCount`. For a full tiled export, the tile counts also add up to `displayPointCount`. The on-screen **Drawn** counter for streaming reports the points submitted for the current view. Distance, detail, and memory limits can make that number lower. Re-export from the original LAS or LAZ to restore detail missing from an older sampled export.
 
 ```powershell
-Rscript "$app\Exporter\export_to_unity.R" "D:\Scans\site.laz" --out "D:\Exports\site-streaming" --max-points 50000000 --streaming
+Rscript "$app\Exporter\export_to_unity.R" "D:\Scans\site.laz" --out "D:\Exports\site-streaming"
 & "$app\UnityLidarViewer.exe" --scene "D:\Exports\site-streaming"
 ```
 

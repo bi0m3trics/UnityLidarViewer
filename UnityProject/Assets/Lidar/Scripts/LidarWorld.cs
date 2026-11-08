@@ -53,14 +53,15 @@ namespace UnityLidarViewer
         public string sceneFolder = "LidarScene";
         public GameObject playerPrefab;
         public Volume glowVolume;
-        [Range(.5f,4f)] public float pointRadiusPixels = 1.5f;
-        [Range(0,12)] public float emission = 4;
-        [Range(.3f,3)] public float fieldGamma = 1.5f;
-        [Range(0,2)] public float bloomStrength = .65f;
+        [Range(.5f,4f)] public float pointRadiusPixels = .7f;
+        [Range(0,12)] public float emission;
+        [Range(.3f,3)] public float fieldGamma = 1;
+        [Range(0,2)] public float bloomStrength;
+        [Range(0,1)] public float depthShading = .3f;
         public bool showGroundPoints = true, showGroundSurface, showCollision;
-        public bool showPerformance = true;
-        public int displayPointBudget = 3000000, streamMemoryMB = 256;
-        public float nearDetailDistance = 20, renderDistance = 300;
+        public bool showPerformance;
+        public int displayPointBudget = 4000000, streamMemoryMB = 1024;
+        public float nearDetailDistance = 30, renderDistance = 90;
         [Tooltip("Block trunks and near-ground vertical objects with tight collision proxies.")]
         public bool enableObstacleCollision = true;
         [Tooltip("Use narrow near-ground proxies instead of the original full voxel volumes.")]
@@ -170,6 +171,12 @@ namespace UnityLidarViewer
         IEnumerator RuntimeSmokeTest()
         {
             yield return new WaitForSeconds(3);
+            bool defaultsOk = (!Manifest.hasRgb || fieldOptions[selectedField].source == FieldSource.Rgb) &&
+                Mathf.Approximately(pointRadiusPixels, .7f) && emission == 0 && fieldGamma == 1 && bloomStrength == 0 &&
+                depthShading > 0 && displayPointBudget == 4000000 && streamMemoryMB == 1024 &&
+                nearDetailDistance == 30 && renderDistance == 90;
+            Debug.Log(defaultsOk ? "LIDAR_DEFAULTS_PASS requested display and streaming defaults."
+                : "LIDAR_DEFAULTS_FAIL incorrect startup settings.");
             if (streamer != null)
             {
                 float deadline = Time.realtimeSinceStartup + 20;
@@ -195,7 +202,7 @@ namespace UnityLidarViewer
                 explorer.CurrentPlayer.GetComponent<PlayerInput>().devices.Any(device => device is Mouse);
             Debug.Log(startupMousePaired ? "LIDAR_STARTUP_MOUSE_PASS first-person controller owns the mouse before switching views."
                 : "LIDAR_STARTUP_MOUSE_FAIL first-person controller has no mouse.");
-            bool ok=startupMousePaired&&explorer.CurrentBody&&explorer.CurrentBody.isGrounded&&mkGlow&&mkGlow.IsActive()&&
+            bool ok=defaultsOk&&startupMousePaired&&explorer.CurrentBody&&explorer.CurrentBody.isGrounded&&mkGlow&&
                 Colliders[0].enabled&&(!enableObstacleCollision||!useSlimObstacleCollision||
                     (SlimColliders.Count==Manifest.slimCollisionCount&&SlimColliders.TrueForAll(c=>c.enabled)&&Colliders.GetRange(1,Colliders.Count-1).TrueForAll(c=>!c.enabled)));
             if (explorer)
@@ -223,13 +230,26 @@ namespace UnityLidarViewer
                     ok &= !SettingsOpen && input.inputIsActive && !Cursor.visible &&
                         (Application.isBatchMode || Cursor.lockState == CursorLockMode.Locked);
                 }
+                explorer.SetThirdPerson(true);
+                Vector3 groundPosition = explorer.CurrentPlayer.transform.position;
+                Vector3 cameraPosition = explorer.View.transform.position;
+                explorer.EnterFlight();
+                bool flightOk = explorer.Flying && !explorer.CurrentPlayer.activeSelf &&
+                    (explorer.View.transform.position - cameraPosition).sqrMagnitude < .0001f;
+                explorer.View.transform.position += Vector3.up * 20;
+                explorer.SetThirdPerson(false);
+                flightOk &= !explorer.Flying && !explorer.ThirdPerson && explorer.CurrentPlayer.activeSelf &&
+                    (explorer.CurrentPlayer.transform.position - groundPosition).sqrMagnitude < .0001f;
+                Debug.Log(flightOk ? "LIDAR_FLIGHT_PASS enters at the camera and returns to the last grounded position."
+                    : "LIDAR_FLIGHT_FAIL camera handoff or ground return failed.");
+                ok &= flightOk;
                 ok &= avatarScaleOk;
                 Debug.Log(avatarScaleOk ? "LIDAR_AVATAR_SCALE_PASS both controllers shortened by 0.33 m."
                     : "LIDAR_AVATAR_SCALE_FAIL incorrect controller height.");
                 Debug.Log(ok ? "SETTINGS_POPUP_PASS starts hidden, releases input on open and restores input on close in both perspectives."
                     : "SETTINGS_POPUP_FAIL settings or runtime validation failed.");
             }
-            Debug.Log(ok?"LIDAR_RUNTIME_PASS scan, vendor controller, tight collision proxies and MK Glow Lite active.":"LIDAR_RUNTIME_FAIL controller, collision or MK Glow validation failed.");
+            Debug.Log(ok?"LIDAR_RUNTIME_PASS scan, controllers, collisions and display defaults.":"LIDAR_RUNTIME_FAIL viewer validation failed.");
             Application.Quit(ok?0:1);
         }
 
@@ -362,7 +382,8 @@ namespace UnityLidarViewer
                 if (!string.IsNullOrEmpty(Manifest.field) && !fieldOptions.Exists(f => f.name == Manifest.field))
                     fieldOptions.Add((Manifest.field, FieldSource.LegacyScalar, null));
             }
-            int initial = fieldOptions.FindIndex(f => f.name == Manifest.field);
+            int initial = fieldOptions.FindIndex(f => f.source == FieldSource.Rgb);
+            if (initial < 0) initial = fieldOptions.FindIndex(f => f.name == Manifest.field);
             SelectField(initial < 0 ? 0 : initial);
         }
 
@@ -488,6 +509,9 @@ namespace UnityLidarViewer
                 introProgress = Mathf.Max(introProgress, Mathf.Lerp(PreparationShare, 1, reveal));
             }
             if(mkGlow)mkGlow.bloomIntensity.value=bloomStrength * Mathf.SmoothStep(0, 1, reveal);
+            Shader.SetGlobalFloat("_LidarDepthStrength", depthShading);
+            if (!IntroActive && !SettingsOpen && (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)))
+                pointRadiusPixels = Mathf.Clamp(pointRadiusPixels + Input.mouseScrollDelta.y * .1f, .5f, 4f);
             if(Input.GetKeyDown(KeyCode.G)) showGroundPoints=!showGroundPoints;
             if(Input.GetKeyDown(KeyCode.T)) showGroundSurface=!showGroundSurface;
             if(Input.GetKeyDown(KeyCode.C)) showCollision=!showCollision;
@@ -595,7 +619,8 @@ namespace UnityLidarViewer
             showPerformance = GUILayout.Toggle(showPerformance, "Show performance counters");
             if (streamer != null)
             {
-                GUILayout.Label($"Drawn {streamer.RenderedPoints:N0} · Resident {streamer.ResidentPoints:N0} · {fps:0} FPS");
+                if (showPerformance)
+                    GUILayout.Label($"Drawn {streamer.RenderedPoints:N0} · Resident {streamer.ResidentPoints:N0} · {fps:0} FPS");
                 GUILayout.Label($"Point budget {displayPointBudget / 1000000f:0.00} million");
                 displayPointBudget = Mathf.RoundToInt(GUILayout.HorizontalSlider(displayPointBudget / 1000000f, .5f, 10) * 1000000);
                 GUILayout.Label($"Point cache {streamMemoryMB} MB");
@@ -613,16 +638,18 @@ namespace UnityLidarViewer
                 PaletteNames.Length, i => PaletteNames[i], SelectPalette);
             GUI.enabled = true;
             if (fieldError != null) GUILayout.Label(fieldError);
-            GUILayout.Label("WASD move · Shift run · Space jump · V first/third person");
+            GUILayout.Label("WASD move · Shift boost · V cycles camera mode");
+            GUILayout.Label("Ground: Space jump · Flight: Space rise / Ctrl descend");
             GUILayout.Label("Mouse look · Esc settings / resume · R respawn");
             GUILayout.Label("P next palette · F next field · C collisions");
             GUILayout.Label("G ground points · T DEM surface (collision stays active)");
             enableObstacleCollision=GUILayout.Toggle(enableObstacleCollision,"Tight tree / solid-object collision");
-            GUILayout.Label($"Point radius: {pointRadiusPixels:0.0} px");
+            GUILayout.Label($"Point radius: {pointRadiusPixels:0.0} px · Alt + wheel");
             pointRadiusPixels=GUILayout.HorizontalSlider(pointRadiusPixels,.5f,4f);
             GUILayout.Label("Emission");emission=GUILayout.HorizontalSlider(emission,0,12);
-            GUILayout.Label("Intensity contrast");fieldGamma=GUILayout.HorizontalSlider(fieldGamma,.3f,3);
+            GUILayout.Label($"Intensity contrast: {fieldGamma-1:+0.0;-0.0;0.0}");fieldGamma=GUILayout.HorizontalSlider(fieldGamma,.3f,3);
             GUILayout.Label("MK Glow Lite bloom");bloomStrength=GUILayout.HorizontalSlider(bloomStrength,0,2);
+            GUILayout.Label("Depth shading");depthShading=GUILayout.HorizontalSlider(depthShading,0,1);
             GUILayout.EndScrollView();
             GUILayout.EndArea();
         }

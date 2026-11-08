@@ -1,5 +1,14 @@
 # Revision history
 
+## Unreleased
+
+- Start in RGB when available with a 0.7 px radius, neutral contrast, zero emission and bloom, and subtle depth shading.
+- Add Alt + wheel point sizing and free flight to the V camera cycle.
+- Set streaming defaults to 30 m full detail, 90 m view distance, a 1,024 MB cache, and a four-million-point draw budget.
+
+- Tile and stream the full scan by default. Use `--no-streaming` for an untiled export or set a point cap to sample.
+- Hide performance counters at startup. Enable them in Settings.
+
 ## v0.1.1 · Product rename
 
 - Renamed the app, launcher, installer, and documentation to Unity LiDAR Viewer.

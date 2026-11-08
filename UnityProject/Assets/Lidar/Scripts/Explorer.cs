@@ -13,12 +13,15 @@ namespace UnityLidarViewer
         public LidarWorld world;
         public GameObject thirdPersonPrefab,firstPersonPrefab,mainCameraPrefab,thirdCameraPrefab,firstCameraPrefab;
         public bool ThirdPerson { get; private set; }
+        public bool Flying { get; private set; }
         public GameObject CurrentPlayer => ThirdPerson?thirdPlayer:firstPlayer;
         public CharacterController CurrentBody => CurrentPlayer?CurrentPlayer.GetComponent<CharacterController>():null;
         public Animator CharacterAnimator => thirdPlayer?thirdPlayer.GetComponent<Animator>():null;
         public Camera View { get; private set; }
         GameObject thirdPlayer,firstPlayer;
         CinemachineCamera thirdCamera,firstCamera;
+        CinemachineBrain brain;
+        Vector2 flightAngles;
         Vector3 spawn;
         bool quitting;
         bool introLocked;
@@ -46,9 +49,12 @@ namespace UnityLidarViewer
             spawn=transform.position;
             var main=Instantiate(mainCameraPrefab,transform);main.name="Main Camera (Starter Assets)";
             View=main.GetComponent<Camera>();View.tag="MainCamera";View.allowHDR=true;
-            View.nearClipPlane=.05f;View.farClipPlane=600;View.clearFlags=CameraClearFlags.SolidColor;View.backgroundColor=Color.black;
-            View.GetUniversalAdditionalCameraData().renderPostProcessing=true;
-            var brain=main.GetComponent<CinemachineBrain>();
+            View.nearClipPlane=.05f;View.farClipPlane=600;View.clearFlags=CameraClearFlags.SolidColor;
+            View.backgroundColor = new Color32(21, 23, 26, 255);
+            var cameraData = View.GetUniversalAdditionalCameraData();
+            cameraData.renderPostProcessing = true;
+            cameraData.antialiasing = AntialiasingMode.FastApproximateAntialiasing;
+            brain=main.GetComponent<CinemachineBrain>();
             brain.DefaultBlend=new CinemachineBlendDefinition(CinemachineBlendDefinition.Styles.Cut,0);
             // PlayerInput pairs devices when enabled. Let the starting controller claim them first.
             firstPlayer=Instantiate(firstPersonPrefab,spawn,Quaternion.identity,transform);
@@ -105,10 +111,51 @@ namespace UnityLidarViewer
             }
             if(Input.GetKeyDown(KeyCode.Escape))SetSettingsOpen(!world.SettingsOpen);
             if(world.SettingsOpen)return;
-            if(Input.GetKeyDown(KeyCode.V))SetThirdPerson(!ThirdPerson);
+            if (Input.GetKeyDown(KeyCode.V))
+            {
+                if (Flying) SetThirdPerson(false);
+                else if (ThirdPerson) EnterFlight();
+                else SetThirdPerson(true);
+            }
             if(Input.GetMouseButtonDown(0))SetCapture(true);
+            if (Flying)
+            {
+                if (Input.GetKeyDown(KeyCode.R))
+                {
+                    flightAngles = Vector2.zero;
+                    View.transform.SetPositionAndRotation(spawn + Vector3.up * 1.4f, Quaternion.identity);
+                }
+                if (Cursor.lockState == CursorLockMode.Locked) Fly();
+                return;
+            }
             if(Input.GetKeyDown(KeyCode.R)||CurrentPlayer.transform.position.y<world.Manifest.boundsMin[1]-30)
             {CurrentBody.enabled=false;CurrentPlayer.transform.position=spawn;CurrentBody.enabled=true;}
+        }
+
+        internal void EnterFlight()
+        {
+            if (Flying || !CurrentPlayer) return;
+            bool capture = Cursor.lockState == CursorLockMode.Locked;
+            Vector3 angles = View.transform.eulerAngles;
+            flightAngles = new Vector2(angles.y, Mathf.DeltaAngle(0, angles.x));
+            SetCapture(false);
+            CurrentPlayer.SetActive(false);
+            Flying = true;
+            brain.enabled = false;
+            SetCapture(capture && !Application.isBatchMode);
+        }
+
+        void Fly()
+        {
+            flightAngles.x += Input.GetAxisRaw("Mouse X") * 2;
+            flightAngles.y = Mathf.Clamp(flightAngles.y - Input.GetAxisRaw("Mouse Y") * 2, -89, 89);
+            View.transform.rotation = Quaternion.Euler(flightAngles.y, flightAngles.x, 0);
+            float rise = Input.GetKey(KeyCode.Space) ? 1 : 0;
+            float descend = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl) ? 1 : 0;
+            Vector3 move = View.transform.forward * Input.GetAxisRaw("Vertical") +
+                View.transform.right * Input.GetAxisRaw("Horizontal") + Vector3.up * (rise - descend);
+            float speed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) ? 15 : 5;
+            View.transform.position += Vector3.ClampMagnitude(move, 1) * (speed * Time.unscaledDeltaTime);
         }
 
         internal void SetAvatarLighting(Color tint)
@@ -142,23 +189,28 @@ namespace UnityLidarViewer
         internal void SetCapture(bool capture)
         {
             if(!CurrentPlayer)return;
-            var controls=CurrentPlayer.GetComponent<StarterAssetsInputs>();controls.cursorLocked=capture;
-            var input=CurrentPlayer.GetComponent<PlayerInput>();
-            if(capture)input.ActivateInput();
-            else{input.DeactivateInput();controls.MoveInput(Vector2.zero);controls.LookInput(Vector2.zero);controls.JumpInput(false);controls.SprintInput(false);}
+            if (!Flying)
+            {
+                var controls=CurrentPlayer.GetComponent<StarterAssetsInputs>();controls.cursorLocked=capture;
+                var input=CurrentPlayer.GetComponent<PlayerInput>();
+                if(capture)input.ActivateInput();
+                else{input.DeactivateInput();controls.MoveInput(Vector2.zero);controls.LookInput(Vector2.zero);controls.JumpInput(false);controls.SprintInput(false);}
+            }
             Cursor.lockState=capture?CursorLockMode.Locked:CursorLockMode.None;Cursor.visible=!capture;
         }
 
         public void SetThirdPerson(bool enabled)
         {
-            if(enabled==ThirdPerson||!CurrentPlayer)return;
+            if((!Flying&&enabled==ThirdPerson)||!CurrentPlayer)return;
             Vector3 position=CurrentPlayer.transform.position;
             Quaternion rotation=Quaternion.Euler(0,View.transform.eulerAngles.y,0);
             bool capture=Cursor.lockState==CursorLockMode.Locked;
             SetCapture(false);CurrentPlayer.SetActive(false);
+            Flying=false;
             ThirdPerson=enabled;
             CurrentPlayer.transform.SetPositionAndRotation(position,rotation);CurrentPlayer.SetActive(true);
             thirdCamera.gameObject.SetActive(enabled);firstCamera.gameObject.SetActive(!enabled);
+            brain.enabled=true;
             Physics.SyncTransforms();SetCapture(capture&&!Application.isBatchMode);
         }
 

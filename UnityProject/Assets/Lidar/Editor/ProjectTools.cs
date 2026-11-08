@@ -64,7 +64,29 @@ namespace UnityLidarViewer.Editor
                 glow=ScriptableObject.CreateInstance<MKGlowLiteRendererFeature>();glow.name="MK Glow Lite";
                 AssetDatabase.AddObjectToAsset(glow,renderer);renderer.rendererFeatures.Add(glow);
             }
-            glow.workmode=MKGlowLiteRendererFeature.Workmode.PostProcessVolumes;glow.SetActive(true);renderer.SetDirty();EditorUtility.SetDirty(renderer);
+            glow.workmode=MKGlowLiteRendererFeature.Workmode.PostProcessVolumes;glow.SetActive(true);
+            var depthShading = renderer.rendererFeatures.OfType<FullScreenPassRendererFeature>()
+                .FirstOrDefault(feature => feature.name == "LiDAR Depth Shading");
+            if (!depthShading)
+            {
+                depthShading = ScriptableObject.CreateInstance<FullScreenPassRendererFeature>();
+                depthShading.name = "LiDAR Depth Shading";
+                AssetDatabase.AddObjectToAsset(depthShading, renderer);
+                renderer.rendererFeatures.Add(depthShading);
+            }
+            const string depthMaterialPath = Settings + "LidarDepthShading.mat";
+            var depthMaterial = AssetDatabase.LoadAssetAtPath<Material>(depthMaterialPath);
+            if (!depthMaterial)
+            {
+                depthMaterial = new Material(Shader.Find("Hidden/UnityLidarViewer/DepthShading"));
+                AssetDatabase.CreateAsset(depthMaterial, depthMaterialPath);
+            }
+            depthShading.injectionPoint = FullScreenPassRendererFeature.InjectionPoint.BeforeRenderingPostProcessing;
+            depthShading.requirements = ScriptableRenderPassInput.Depth;
+            depthShading.fetchColorBuffer = false;
+            depthShading.passMaterial = depthMaterial;
+            EditorUtility.SetDirty(depthShading);
+            renderer.SetDirty();EditorUtility.SetDirty(renderer);
             var pipeline=AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(Settings+"LidarURP.asset");
             if(!pipeline){pipeline=UniversalRenderPipelineAsset.Create(renderer);AssetDatabase.CreateAsset(pipeline,Settings+"LidarURP.asset");}
             var serialized=new SerializedObject(pipeline);var renderers=serialized.FindProperty("m_RendererDataList");
@@ -87,7 +109,7 @@ namespace UnityLidarViewer.Editor
             var profile=AssetDatabase.LoadAssetAtPath<VolumeProfile>(Settings+"LidarGlow.asset");
             if(!profile){profile=ScriptableObject.CreateInstance<VolumeProfile>();AssetDatabase.CreateAsset(profile,Settings+"LidarGlow.asset");}
             if(!profile.TryGet<MKGlowLite>(out var glow)){glow=profile.Add<MKGlowLite>(true);AssetDatabase.AddObjectToAsset(glow,profile);}
-            glow.active=true;glow.bloomIntensity.Override(.65f);glow.bloomScattering.Override(6);
+            glow.active=true;glow.bloomIntensity.Override(0);glow.bloomScattering.Override(6);
             // MK's inspector initializes a newly added component by zeroing bloom.
             // This profile is already configured, so preserve it on first inspection.
             glow.isInitialized.Override(true);
@@ -312,13 +334,15 @@ namespace UnityLidarViewer.Editor
                     VerifyPlayer(explorer,true);
                     if(!(GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset))throw new Exception("URP is not active.");
                     var shader=Shader.Find("UnityLidarViewer/Points");if(!shader.isSupported||ShaderUtil.ShaderHasError(shader))throw new Exception("Point shader invalid.");
-                    if(!world.glowVolume.profile.TryGet<MKGlowLite>(out var glow)||!glow.IsActive())throw new Exception("MK Glow Lite volume is inactive.");
+                    if(!world.glowVolume.profile.TryGet<MKGlowLite>(out var glow))throw new Exception("MK Glow Lite volume is missing.");
                     if(UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include,FindObjectsSortMode.None).Any(b=>b&&(b.GetType().Name=="HikerOutfit"||b.GetType().Name=="ShepherdCompanion"||b.GetType().Name=="SimpleBloom")))throw new Exception("Removed custom content remains active.");
                     if(world.Colliders.Count!=world.Manifest.collisionFiles.Length+1)throw new Exception("Collider count mismatch.");
                     VerifyMinimalCollision(world);
                     // Freeze the idle pose so the bloom comparison cannot pass due
                     // to character animation instead of an actual image effect.
                     explorer.CharacterAnimator.speed=0;
+                    world.SelectField("intensity");
+                    world.emission = 4;
                     Capture(explorer.View,Path.Combine(dir,"preview.png"));
                     world.bloomStrength=0;world.SendMessage("Update");stage=1;readyAt=EditorApplication.timeSinceStartup+.4;
                 }
@@ -435,6 +459,7 @@ namespace UnityLidarViewer.Editor
         public static void BuildWindows()
         {
             if(!File.Exists("Assets/Scenes/UnityLidarViewer.unity"))CreateScene();
+            else ConfigurePipeline();
             const string explorerPath = "Assets/Lidar/Prefabs/Explorer.prefab";
             var adventure = PrepareAdventurePlayer();
             var explorer = PrefabUtility.LoadPrefabContents(explorerPath);

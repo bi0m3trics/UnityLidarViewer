@@ -2,8 +2,8 @@ Shader "UnityLidarViewer/Points"
 {
     Properties
     {
-        _PointRadiusPixels("Radius (pixels)",Float)=1.5
-        _Emission("Emission",Float)=4
+        _PointRadiusPixels("Radius (pixels)",Float)=0.7
+        _Emission("Emission",Float)=0
         _Reveal("Reveal",Float)=1
         _Palette("Scalar palette",2D)="white"{}
     }
@@ -69,18 +69,16 @@ Shader "UnityLidarViewer/Points"
                 rgb=SRGBToLinear(rgb);
                 float3 ramp=tex2Dlod(_Palette,float4((t*255+.5)/256,_PaletteRow,0,0)).rgb;
                 if (_FieldSource == 5 && value < 0) ramp = float3(.1,.1,.1);
-                float3 color=_FieldSource==0?rgb:ramp;
-                // All returns emit, including the dark end of Magma. Intensity still
-                // controls hue and relative energy; source RGB never gates scalar glow.
-                float peak=max(color.r,max(color.g,color.b));
-                float3 hue=color/max(.0001,peak);
-                o.color=hue*(.4+.6*sqrt(peak))*(1+_Emission*_Reveal*(.55+.45*t));return o;
+                float3 color = _FieldSource == 0 ? pow(max(rgb, 0), .80) : ramp;
+                o.color = color * (1 + _Emission * _Reveal * (.55 + .45 * t));
+                return o;
             }
             float4 frag(v2f i):SV_Target
             {
                 clip(i.visible-.5);float r2=dot(i.uv,i.uv);clip(1-r2);
-                // Rounded emissive kernel instead of a flat colored disc.
-                float core=exp(-r2*3.5);return float4(i.color*core,1);
+                // Keep the disc bright across its face and soften only its rim.
+                float rim = lerp(1, .78, smoothstep(.65, 1, r2));
+                return float4(i.color * rim, 1);
             }
             ENDHLSL
         }
