@@ -1,12 +1,10 @@
 # Unity LiDAR Viewer for Windows
 
-> The current source includes the defaults and controls documented below. The v0.1.1 installer predates these changes.
-
 Unity LiDAR Viewer is a first- and third-person viewer for exploring LiDAR scans. In third person you play as Adventure Character, wearing a dark orange jacket, khaki pants, and a dark gray backpack. The included forest scene has solid terrain and tight trunk collision. You can color the points by RGB or an exported LiDAR field, choose a palette, and adjust point radius and bloom.
 
 ## Install and run
 
-If you installed v0.1, uninstall it from Windows Installed apps before installing v0.1.1. Keep any scene exports in their own folders.
+If you installed an earlier version, uninstall it from Windows Installed apps before installing v0.1.2. Keep any scene exports in their own folders.
 
 1. Run **Unity-LiDAR-Viewer-Setup.exe** on 64-bit Windows 10 or 11 with a DirectX 11 or 12 graphics device.
 2. Follow the setup prompts. The default destination is **%LOCALAPPDATA%\Unity LiDAR Viewer** for the current user.

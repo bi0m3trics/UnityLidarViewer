@@ -38,11 +38,11 @@ def main():
         raise SystemExit("The demo scene is missing from the Windows build.")
     lines = [
         'Unicode true',
-        'VIProductVersion 0.1.1.0',
+        'VIProductVersion 0.1.2.0',
         'VIAddVersionKey "ProductName" "Unity LiDAR Viewer"',
         'VIAddVersionKey "FileDescription" "Unity LiDAR Viewer Windows Setup"',
-        'VIAddVersionKey "FileVersion" "0.1.1.0"',
-        'VIAddVersionKey "ProductVersion" "0.1.1"',
+        'VIAddVersionKey "FileVersion" "0.1.2.0"',
+        'VIAddVersionKey "ProductVersion" "0.1.2"',
         'Name "Unity LiDAR Viewer"',
         f'OutFile "{nsis_path(DIST / "Unity-LiDAR-Viewer-Setup.exe")}"',
         r'InstallDir "$LOCALAPPDATA\Unity LiDAR Viewer"',
@@ -82,7 +82,7 @@ def main():
         r'  WriteUninstaller "$INSTDIR\Uninstall.exe"',
         r'  CreateShortcut "$SMPROGRAMS\Unity LiDAR Viewer.lnk" "$INSTDIR\UnityLidarViewer.exe"',
         f'  WriteRegStr HKCU "{UNINSTALL_KEY}" "DisplayName" "Unity LiDAR Viewer"',
-        f'  WriteRegStr HKCU "{UNINSTALL_KEY}" "DisplayVersion" "0.1.1"',
+        f'  WriteRegStr HKCU "{UNINSTALL_KEY}" "DisplayVersion" "0.1.2"',
         f'  WriteRegStr HKCU "{UNINSTALL_KEY}" "InstallLocation" "$INSTDIR"',
         f'  WriteRegStr HKCU "{UNINSTALL_KEY}" "DisplayIcon" "$INSTDIR\\UnityLidarViewer.exe"',
         f'  WriteRegStr HKCU "{UNINSTALL_KEY}" "UninstallString" \'"$INSTDIR\\Uninstall.exe"\'',

@@ -1,16 +1,14 @@
 # Unity LiDAR Viewer
 
-> The current source includes the defaults and controls documented below. The v0.1.1 installer predates these changes.
-
 Walk through a laser scan in Unity. Unity LiDAR Viewer turns a LAS or LAZ point cloud into an explorable scene with terrain, tree collisions, and interactive coloring. This image shows the bundled BLK360 forest in third person, colored by LiDAR intensity with Magma and bloom.
 
 ![Adventure Character in a glowing Magma-colored BLK360 forest](docs/media/forest-third-person.png)
 
-[Windows installer · v0.1.1](https://github.com/bi0m3trics/UnityLidarViewer/releases/tag/v0.1.1) · [Install and use](Dist/INSTALL.md) · [Build from source](docs/BUILD.md) · [Revision history](news.md)
+[Windows installer · v0.1.2](https://github.com/bi0m3trics/UnityLidarViewer/releases/tag/v0.1.2) · [Install and use](Dist/INSTALL.md) · [Build from source](docs/BUILD.md) · [Revision history](news.md)
 
 ## Get started
 
-1. Download **Unity-LiDAR-Viewer-Setup.exe** from the v0.1.1 release and run it on 64-bit Windows 10 or 11 with a DirectX 11 or 12 graphics device.
+1. Download **Unity-LiDAR-Viewer-Setup.exe** from the v0.1.2 release and run it on 64-bit Windows 10 or 11 with a DirectX 11 or 12 graphics device.
 2. Launch **Unity LiDAR Viewer** from the Start menu. The bundled BLK360 forest opens in first person. Mouse look becomes available when the opening reveal finishes.
 3. Move with **WASD**, run with **Shift**, and jump with **Space**. Use **V** to cycle first person, third person, and free flight, **Esc** for settings, **T** to show the terrain, and **Alt+Enter** to toggle fullscreen.
 

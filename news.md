@@ -1,6 +1,6 @@
 # Revision history
 
-## Unreleased
+## v0.1.2 · Viewer improvements
 
 - Start in RGB when available with a 0.7 px radius, neutral contrast, zero emission and bloom, and subtle depth shading.
 - Add Alt + wheel point sizing and free flight to the V camera cycle.
